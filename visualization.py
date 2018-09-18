@@ -20,14 +20,8 @@ from scipy import stats
 ##########
 # load data
 ##########
-# all_data = pd.read_csv('/media/bremer/Share HDD/Data/ECompared/data_EMA.csv') ### Linux HOME
-#all_data = pd.read_csv('/media/bremer/eedd7f3f-9bf2-4fbc-8212-d8907912b2fa/EComparedData/161024/data_EMA.csv') ### Linux new data (include new path)
-#all_data = pd.read_csv('/media/bremer/eedd7f3f-9bf2-4fbc-8212-d8907912b2fa/EComparedData/161024/data_EMA.csv') ### Linux new data (include new path)
-#all_data = pd.read_csv('/Users/Bremer/Documents/EComparedData/161024/data_EMA.csv') ### MAC
-
-# load res
-with open('/Users/Bremer/Documents/GIT/Hub/PredictSelfEsteem/data/res_example_Nohetero_stereo.pickle', 'rb') as f:  # Python 3: open(..., 'rb')
-    [rmse, mae, rmse_mean, mae_mean, dic, waic, res3, data, inds] = pickle.load(f)
+with open('data/example_res_hetero_stereo.pickle', 'rb') as f:  # Python 3: open(..., 'rb')
+    [rmse, mae, rmse_mean, mae_mean, dic, waic, res4, data, inds] = pickle.load(f)
 
 ##########
 # Visualization of predictors
@@ -58,7 +52,7 @@ var_sleep = pd.DataFrame(var_sleep)
 var_social = pd.DataFrame(var_social)
 var_self = pd.DataFrame(var_self)
 
-# variance plot 1
+# variance plot 
 sns.set(color_codes=True)
 sns.set(style="darkgrid", palette="muted")
 fig, axs = plt.subplots(ncols=3, nrows=2)
@@ -145,23 +139,22 @@ sns.plt.show()
 ##########
 # Visualization of Predictions and True Values
 ##########
-# assume last fold as test set 
+# assume last fold as test set for this exploratory analysis 
 test_set = data.iloc[list(inds[9][1])]
 
 # prepare plot
 true_val = pd.DataFrame(test_set['self-esteem'])
 true_val = true_val.reset_index(drop=True)
-y1 = res3['y_pred']
+y1 = res4['y_pred']
 y2 = np.mean(y1, axis=0)
-preds = np.round(y2) 
-preds = pd.DataFrame(preds)
-preds = preds.reset_index(drop=True)
+preds = pd.DataFrame(np.round(y2))
+#preds = preds.reset_index(drop=True)
 vals_stereo = preds.join(true_val.rename(columns={0:'true'}))
 vals_stereo.columns = ['preds', 'true']
 vals_stereo = vals_stereo.sort_values(['true'], ascending=[True])
-vals_stereo['num'] = range(0,172)
+vals_stereo['num'] = range(0,len(vals_stereo))
 
-# plot
+# plot prediction vs real value
 sns.set(color_codes=True)
 sns.set(style="darkgrid", palette="muted")
 ax = sns.regplot("num", "preds", data=vals_stereo, fit_reg=False, marker='x', color='#990000')
@@ -175,11 +168,8 @@ sns.plt.show()
 ##########
 # Parameter for each user - calculation
 ##########
-with open('/Users/Bremer/ownCloud/1_RESEARCH/Mental Health/Self-Esteem/Python/Results/ecompared/prior_res/all_res/hetero_res_stereo_ALL.pickle', 'rb') as f:  # Python 3: open(..., 'rb')
-    data, res = pickle.load(f)
-    
-beta = res3['beta']
-#perc = np.percentile(beta, [2.5, 50, 97.5], axis=0) also works just like this: just to be sure, I have coded the following:
+beta = res4['beta']
+#perc = np.percentile(beta, [2.5, 50, 97.5], axis=0) #also works just like this: just to be sure, I have coded the following:
 
 list_mood = [[] for x in range(len(beta[1]))]
 list_rum = [[] for x in range(len(beta[1]))]
@@ -195,7 +185,7 @@ for k in range(len(beta)):
         list_act[i].append(beta[k][i][3])
         list_social[i].append(beta[k][i][4])
 
-index = list(range(130))
+index = list(range(max(data.id).astype(int)))
 columns = ['2.5', '50', '97.5']
 perc_mood = pd.DataFrame(index=index, columns=columns)
 perc_rum = pd.DataFrame(index=index, columns=columns)
@@ -210,25 +200,7 @@ for i in range(len(beta[1])):
     perc_act.iloc[i] = np.percentile(list_act[i], [2.5, 50, 97.5], axis=0)
     perc_social.iloc[i] = np.percentile(list_social[i], [2.5, 50, 97.5], axis=0)
 
-# amount of users that are in accordance with results
-m = 0
-r = 0
-a = 0
-sl = 0
-so = 0
-for i in range(len(beta[1])):
-    if perc_mood['2.5'].iloc[i] >= 0 and perc_mood['97.5'].iloc[i] >= 0:
-        m = m + 1
-    if perc_rum['2.5'].iloc[i] <= 0 and perc_rum['97.5'].iloc[i] <= 0:
-        r = r + 1
-    if perc_act['2.5'].iloc[i] >= 0 and perc_act['97.5'].iloc[i] >= 0:
-        a = a + 1
-    if perc_sleep['2.5'].iloc[i] >= 0 and perc_sleep['97.5'].iloc[i] >= 0:
-        sl = sl + 1
-    if perc_social['2.5'].iloc[i] >= 0 and perc_social['97.5'].iloc[i] >= 0:
-        so = so + 1
-
-# see and boxplot for the users
+# boxplot for the users - preparation (parameter distribution for each user and independent variable)
 perc_mood = perc_mood.sort(columns=['50'], axis=0)
 perc_rum = perc_rum.sort(columns=['50'], axis=0)
 perc_act = perc_act.sort(columns=['50'], axis=0)
@@ -270,19 +242,20 @@ for i in range(len(beta[1])):
         a = 1
     else:
         a = 1
-    
     ax[4].plot( [i,i], [perc_social['2.5'].iloc[i], perc_social['97.5'].iloc[i]], 'k-', alpha = a) 
     ax[4].plot( [i], [perc_social['50'].iloc[i]], 'ko', alpha = a) 
+    
+# plot    
 ax[0].axhline(0, c='r', lw=0.8)
 ax[1].axhline(0, c='r', lw=0.8)
 ax[2].axhline(0, c='r', lw=0.8)
 ax[3].axhline(0, c='r', lw=0.8)
 ax[4].axhline(0, c='r', lw=0.8)
-ax[0].set_xlim(-1,131)
-ax[1].set_xlim(-1,131)
-ax[2].set_xlim(-1,131)
-ax[3].set_xlim(-1,131)
-ax[4].set_xlim(-1,131)
+ax[0].set_xlim(-1,max(data.id).astype(int)+5)
+ax[1].set_xlim(-1,max(data.id).astype(int)+5)
+ax[2].set_xlim(-1,max(data.id).astype(int)+5)
+ax[3].set_xlim(-1,max(data.id).astype(int)+5)
+ax[4].set_xlim(-1,max(data.id).astype(int)+5)
 ax[0].set_ylabel('Mood', fontsize=18)
 ax[1].set_ylabel('Worry', fontsize=18)
 ax[2].set_ylabel('Enjoyed Act.', fontsize=18)

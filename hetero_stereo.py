@@ -38,17 +38,17 @@ for i in range(10):
     Y = test_set['self-esteem']
     y_mean = np.repeat(np.round(np.mean(data_train['self-esteem'])),len(Y))
     
-    regress_dat = {'C': 10, 'y': data_train["self-esteem"].astype(int),
+    regress_dat = {'C': max(data['self-esteem']).astype(int), 'y': data_train["self-esteem"].astype(int),
                'N': len(data_train), 'K': 5,
                'x': x,
                'alpha': np.repeat(1, 9),
-               'n_users':130, 
+               'n_users':max(data.id).astype(int), 
                'users':data_train[[0]].values.reshape((len(data_train))).astype(int),
                'x_pred': x_pred,
                'N2': len(test_set),
                'users2':test_set[[0]].values.reshape((len(test_set))).astype(int)}
     
-    fitStereo2 = pystan.stan(file='models/myStereoModel_BETA_hetero_pred.stan', data=regress_dat, iter=50, warmup=10, thin=2, chains=2)   
+    fitStereo2 = pystan.stan(file='models/hetero_stereo.stan', data=regress_dat, iter=50, warmup=10, thin=2, chains=2)   
     
     # calculate rmse/mae
     res4 = fitStereo2.extract(permuted=True)
@@ -79,6 +79,6 @@ for i in range(10):
 
 # save res
 with open('hetero_stereo.pickle', 'wb') as f:  
-    pickle.dump([rmse, mae, rmse_mean, mae_mean, dic, waic, res1, data, inds], f)
+    pickle.dump([rmse, mae, rmse_mean, mae_mean, dic, waic, res4, data, inds], f)
 
 

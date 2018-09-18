@@ -38,14 +38,14 @@ for i in range(10):
     Y = test_set['self-esteem']
     y_mean = np.repeat(np.round(np.mean(data_train['self-esteem'])),len(Y))
         
-    regress_dat_no_hetero = {'C': 10, 'y': data_train["self-esteem"].astype(int),
+    regress_dat_no_hetero = {'C': max(data['self-esteem']).astype(int), 'y': data_train["self-esteem"].astype(int),
         'N': len(data_train), 'K': 5,
         'x': x,
         'alpha': np.repeat(1, 9),
         'x_pred': x_pred,
         'N2': len(test_set)}
     
-    fitStereo1 = pystan.stan(file='models/myStereoModel_no_hetero_pred.stan', data=regress_dat_no_hetero, iter=50, warmup=10, thin=2, chains=2)   
+    fitStereo1 = pystan.stan(file='models/no_hetero_stereo.stan', data=regress_dat_no_hetero, iter=50, warmup=10, thin=2, chains=2)   
 
     # calculate rmse/mae
     res3 = fitStereo1.extract(permuted=True)

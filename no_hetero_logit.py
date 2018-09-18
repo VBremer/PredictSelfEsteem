@@ -38,14 +38,14 @@ for i in range(10):
     Y = test_set['self-esteem']
     y_mean = np.repeat(np.round(np.mean(data_train['self-esteem'])),len(Y))
         
-    regress_dat_no_hetero = {'C': 10, 'y': data_train["self-esteem"].astype(int),
+    regress_dat_no_hetero = {'C': max(data['self-esteem']).astype(int), 'y': data_train["self-esteem"].astype(int),
         'N': len(data_train), 'K': 5,
         'x': x,
         'alpha': np.repeat(1, 9),
         'x_pred': x_pred,
         'N2': len(test_set)}
     
-    fitlog1 = pystan.stan(file='models/myOrderedLogitModel_no_hetero_pred.stan', data=regress_dat_no_hetero, iter=50, warmup=10, thin=2, chains=2, n_jobs=1)   
+    fitlog1 = pystan.stan(file='models/no_hetero_logit.stan', data=regress_dat_no_hetero, iter=50, warmup=10, thin=2, chains=2, n_jobs=1)   
     
     # calculate rmse/mae
     res1 = fitlog1.extract(permuted=True)
